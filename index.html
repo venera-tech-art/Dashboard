@@ -70,14 +70,14 @@ select{padding:7px 12px;border-radius:7px;border:1px solid var(--border);backgro
   <div style="background:#fff;border-radius:16px;padding:40px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
     <div style="text-align:center;margin-bottom:28px">
       <div style="font-size:32px;margin-bottom:8px">📊</div>
-      <h2 style="margin:0;font-size:18px;font-weight:800;color:#1a472a;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">ROI VENERA</h2>
+      <h2 style="margin:0;font-size:18px;font-weight:800;color:#1a472a">ROI VENERA</h2>
       <p style="margin:4px 0 0;font-size:12px;color:#888">Selecione o site</p>
     </div>
     <div style="display:grid;gap:10px">
-      <button onclick="selectSite('beneficioja')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;transition:all .2s;text-align:left" onmouseover="this.style.borderColor='#2d6a4f';this.style.background='#f0faf4'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='#fff'"><span style="font-size:24px">🟢</span><div><div style="font-weight:700;font-size:14px;color:#1a472a">Benefício Já</div><div style="font-size:11px;color:#888">beneficioja.com</div></div></button>
-      <button onclick="selectSite('mundocha')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;transition:all .2s;text-align:left" onmouseover="this.style.borderColor='#2d6a4f';this.style.background='#f0faf4'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='#fff'"><span style="font-size:24px">🍵</span><div><div style="font-weight:700;font-size:14px;color:#1a472a">Mundo Chá</div><div style="font-size:11px;color:#888">mundocha.com</div></div></button>
-      <button onclick="selectSite('felino')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;transition:all .2s;text-align:left" onmouseover="this.style.borderColor='#2d6a4f';this.style.background='#f0faf4'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='#fff'"><span style="font-size:24px">🌿</span><div><div style="font-weight:700;font-size:14px;color:#1a472a">Felino Saudável</div><div style="font-size:11px;color:#888">Em breve</div></div></button>
-      <button onclick="selectSite('jovem')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;transition:all .2s;text-align:left" onmouseover="this.style.borderColor='#2d6a4f';this.style.background='#f0faf4'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='#fff'"><span style="font-size:24px">🔮</span><div><div style="font-weight:700;font-size:14px;color:#1a472a">Jovem Mística</div><div style="font-size:11px;color:#888">Em breve</div></div></button>
+      <button onclick="selectSite('beneficioja')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;text-align:left" onmouseover="this.style.borderColor='#2d6a4f'" onmouseout="this.style.borderColor='#e0e0e0'"><span style="font-size:24px">🟢</span><div><div style="font-weight:700;color:#1a472a">Benefício Já</div><div style="font-size:11px;color:#888">beneficioja.com</div></div></button>
+      <button onclick="selectSite('mundocha')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;text-align:left" onmouseover="this.style.borderColor='#2d6a4f'" onmouseout="this.style.borderColor='#e0e0e0'"><span style="font-size:24px">🍵</span><div><div style="font-weight:700;color:#1a472a">Mundo Chá</div><div style="font-size:11px;color:#888">mundocha.com</div></div></button>
+      <button onclick="selectSite('felino')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;text-align:left" onmouseover="this.style.borderColor='#2d6a4f'" onmouseout="this.style.borderColor='#e0e0e0'"><span style="font-size:24px">🌿</span><div><div style="font-weight:700;color:#1a472a">Felino Saudável</div><div style="font-size:11px;color:#888">Em breve</div></div></button>
+      <button onclick="selectSite('jovem')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;text-align:left" onmouseover="this.style.borderColor='#2d6a4f'" onmouseout="this.style.borderColor='#e0e0e0'"><span style="font-size:24px">🔮</span><div><div style="font-weight:700;color:#1a472a">Jovem Mística</div><div style="font-size:11px;color:#888">Em breve</div></div></button>
     </div>
   </div>
 </div>
@@ -137,101 +137,6 @@ function checkAuth(){
 }
 
 
-
-// === SUPABASE CONFIG ===
-const SUPABASE_URL = 'https://uwppsordnzyuddazmvnq.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_YrX0QWbkCVNaW_KpAGoyQw_xz4RbjSn';
-const EDGE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/bright-processor';
-const SITE_DOMAINS = {
-  beneficioja: 'beneficioja.com',
-  mundocha: 'mundocha.com',
-  felino: '',
-  jovem: '',
-};
-
-async function loadGAMFromSupabase() {
-  const domain = SITE_DOMAINS[currentSite];
-  if (!domain) return;
-  
-  const status = document.getElementById('sync-status');
-  if (status) { status.textContent = '⏳ Carregando dados do GAM...'; status.style.display = 'block'; status.style.color = '#f39c12'; }
-  
-  try {
-    // Fetch daily placement data from Supabase
-    const dailyResp = await fetch(SUPABASE_URL + '/rest/v1/gam_daily?site=eq.' + domain + '&order=date.desc&limit=500', {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-    });
-    const dailyRows = await dailyResp.json();
-    
-    if (dailyRows.length > 0) {
-      dailyRows.forEach(r => {
-        const rev = parseFloat(r.revenue) || 0;
-        if (rev <= 0) return;
-        // Find matching Meta row by date + placement
-        const match = rawData.find(m => m.d === r.date && m.p === r.placement && m.ms > 0);
-        if (match) {
-          match.gr = rev;
-        } else {
-          // Find any Meta campaign active on this date
-          const anyMatch = rawData.find(m => m.d === r.date && m.ms > 0);
-          const campName = anyMatch ? anyMatch.c : (ACTIVE.length > 0 ? ACTIVE[0] : rawData.length > 0 ? rawData[0].c : domain);
-          // Check if already exists
-          const exists = rawData.find(m => m.d === r.date && m.p === r.placement && m.c === campName);
-          if (exists) { exists.gr = rev; }
-          else { rawData.push({ c: campName, d: r.date, p: r.placement, ms: 0, mc: 0, mi: r.impressions || 0, gr: rev }); }
-        }
-      });
-    }
-    
-    // Fetch hourly data from Supabase
-    const hourlyResp = await fetch(SUPABASE_URL + '/rest/v1/gam_hourly?site=eq.' + domain + '&order=date.desc,hour.asc&limit=1000', {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-    });
-    const hourlyRows = await hourlyResp.json();
-    
-    if (hourlyRows.length > 0) {
-      // Use the main active campaign name for hourly data
-      const mainCamp = ACTIVE.length > 0 ? ACTIVE[0] : rawData.length > 0 ? rawData[0].c : domain;
-      hourlyData = hourlyRows.map(r => ({
-        c: mainCamp, d: r.date, h: r.hour,
-        s: 0, r: parseFloat(r.revenue) || 0
-      }));
-    }
-    
-    if (status) { 
-      status.textContent = '✅ Dados GAM atualizados! (' + dailyRows.length + ' placement, ' + hourlyRows.length + ' hora)'; 
-      status.style.color = '#27ae60'; 
-      setTimeout(() => { status.style.display = 'none'; }, 5000); 
-    }
-    render();
-    
-  } catch(e) {
-    console.error('Erro Supabase:', e);
-    if (status) { 
-      status.textContent = '⚠️ Erro ao carregar dados: ' + e.message; 
-      status.style.color = '#e74c3c'; 
-      setTimeout(() => { status.style.display = 'none'; }, 8000); 
-    }
-  }
-}
-
-async function triggerSync() {
-  const status = document.getElementById('sync-status');
-  if (status) { status.textContent = '⏳ Sincronizando com AdSeleto (pode levar ~60s)...'; status.style.display = 'block'; status.style.color = '#f39c12'; }
-  try {
-    const resp = await fetch(EDGE_FUNCTION_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-    const data = await resp.json();
-    if (data.ok) {
-      if (status) { status.textContent = '✅ Sync completo! Recarregando dados...'; status.style.color = '#27ae60'; }
-      await loadGAMFromSupabase();
-    } else {
-      throw new Error(data.error || 'Erro desconhecido');
-    }
-  } catch(e) {
-    if (status) { status.textContent = '⚠️ Erro no sync: ' + e.message; status.style.color = '#e74c3c'; setTimeout(() => { status.style.display = 'none'; }, 8000); }
-  }
-}
-
 const SITES = {
   beneficioja: { name: 'Benefício Já', domain: 'beneficioja.com', emoji: '🟢' },
   mundocha: { name: 'Mundo Chá', domain: 'mundocha.com', emoji: '🍵' },
@@ -244,18 +149,112 @@ function selectSite(siteKey) {
   sessionStorage.setItem('dash_site', siteKey);
   document.getElementById('site-select').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  if(siteKey === 'beneficioja') {
-    rawData = [...INIT_RAW]; hourlyData = [...INIT_HOURLY];
-  } else {
-    rawData = []; hourlyData = [];
-  }
+  rawData = [...INIT_RAW]; hourlyData = [...INIT_HOURLY];
   render();
-  loadGAMFromSupabase();
+  loadFromSupabase(siteKey);
 }
 function showSiteSelect() {
   document.getElementById('app').style.display = 'none';
   document.getElementById('site-select').style.display = 'flex';
 }
+
+
+// === SUPABASE CONFIG ===
+const SUPABASE_URL = 'https://uwppsordnzyuddazmvnq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3cHBzb3Jkbnp5dWRkYXptdm5xIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjEyNjk5MiwiZXhwIjoyMTA3NzAyOTkyfQ.JhVgCML2q1KfEKnHe0RnuM8PjEO3QNovsasxH_DVGPA';
+const SB_HEADERS = {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'};
+
+async function loadFromSupabase(site) {
+  const domain = SITE_DOMAINS[site] || site;
+  const status = document.getElementById('sync-status');
+  if(status){ status.textContent='⏳ Carregando dados do Supabase...'; status.style.display='block'; status.style.color='#f39c12'; }
+  try {
+    // Load placement data
+    const pResp = await fetch(SUPABASE_URL + '/rest/v1/placement_data?site=eq.' + domain + '&order=date.desc,campaign.asc,placement.asc&limit=2000', {
+      headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY}
+    });
+    const pRows = await pResp.json();
+    if(pRows.length > 0) {
+      rawData = pRows.map(r => ({
+        c: r.campaign, d: r.date, p: r.placement,
+        ms: parseFloat(r.spend)||0, mc: r.clicks||0, mi: r.impressions||0,
+        gr: parseFloat(r.revenue)||0
+      }));
+      INIT_RAW = [...rawData];
+    }
+
+    // Load hourly data
+    const hResp = await fetch(SUPABASE_URL + '/rest/v1/hourly_data?site=eq.' + domain + '&order=date.desc,hour.asc&limit=2000', {
+      headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY}
+    });
+    const hRows = await hResp.json();
+    if(hRows.length > 0) {
+      hourlyData = hRows.map(r => ({
+        c: r.campaign, d: r.date, h: r.hour,
+        s: parseFloat(r.spend)||0, r: parseFloat(r.revenue)||0
+      }));
+      INIT_HOURLY = [...hourlyData];
+    }
+
+    if(status) {
+      status.textContent = '✅ Dados carregados! (' + pRows.length + ' placement, ' + hRows.length + ' hora)';
+      status.style.color = '#27ae60';
+      setTimeout(() => { status.style.display = 'none'; }, 4000);
+    }
+    render();
+  } catch(e) {
+    console.error('Erro Supabase:', e);
+    if(status) {
+      status.textContent = '⚠️ Erro: ' + e.message + '. Usando dados locais.';
+      status.style.color = '#e74c3c';
+      setTimeout(() => { status.style.display = 'none'; }, 6000);
+    }
+  }
+}
+
+async function saveToSupabase(site, placementRows, hourlyRows) {
+  const domain = SITE_DOMAINS[site] || site;
+  try {
+    if(placementRows.length > 0) {
+      const rows = placementRows.map(r => ({
+        site: domain, campaign: r.c, date: r.d, placement: r.p,
+        spend: r.ms, clicks: r.mc, impressions: r.mi, revenue: r.gr,
+        updated_at: new Date().toISOString()
+      }));
+      // Batch upsert in chunks of 100
+      for(let i = 0; i < rows.length; i += 100) {
+        await fetch(SUPABASE_URL + '/rest/v1/placement_data', {
+          method: 'POST', headers: SB_HEADERS,
+          body: JSON.stringify(rows.slice(i, i+100))
+        });
+      }
+    }
+    if(hourlyRows.length > 0) {
+      const rows = hourlyRows.map(r => ({
+        site: domain, campaign: r.c, date: r.d, hour: r.h,
+        spend: r.s, revenue: r.r,
+        updated_at: new Date().toISOString()
+      }));
+      for(let i = 0; i < rows.length; i += 100) {
+        await fetch(SUPABASE_URL + '/rest/v1/hourly_data', {
+          method: 'POST', headers: SB_HEADERS,
+          body: JSON.stringify(rows.slice(i, i+100))
+        });
+      }
+    }
+    return true;
+  } catch(e) {
+    console.error('Erro ao salvar:', e);
+    return false;
+  }
+}
+
+const SITE_DOMAINS = {
+  beneficioja: 'beneficioja.com',
+  mundocha: 'mundocha.com',
+  felino: '',
+  jovem: '',
+};
 
 const META_SHEET_ID = '';
 const GAM_SHEET_ID = '';
@@ -273,7 +272,7 @@ async function loadSheetsData() {
   const status = document.getElementById('sync-status');
   if(status){status.textContent='⏳ Carregando Meta Ads do Sheets...';status.style.display='block';status.style.color='#f39c12';}
   try {
-    if(!META_SHEET_ID||!GAM_SHEET_ID){if(status){status.textContent='📊 Dados carregados do cache';status.style.color='#27ae60';setTimeout(()=>{status.style.display='none'},3000);}return;}
+    if(!META_SHEET_ID||!GAM_SHEET_ID){if(status){status.textContent='📊 Dados carregados';status.style.color='#27ae60';setTimeout(()=>{status.style.display='none'},3000);}return;}
     const metaWb = await fetchSheetAsXlsx(META_SHEET_ID);
     if(status) status.textContent='⏳ Carregando GAM do Sheets...';
     const gamWb = await fetchSheetAsXlsx(GAM_SHEET_ID);
@@ -285,7 +284,7 @@ async function loadSheetsData() {
     const merged = mergeData([], metaRows, gamRows);
     if(merged.length>0){INIT_RAW=merged;rawData=merged;}
     const hourlyRows = parseHourlyExcel(horaWb);
-    if(hourlyRows.length>0){INIT_HOURLY=hourlyRows;hourlyData=hourlyRows;}
+    if(hourlyRows.length>0){INIT_HOURLY=hourlyRows;hourlyData=hourlyRows;saveToSupabase(currentSite,[],hourlyData);}
     if(status){status.textContent='✅ Dados sincronizados do Google Sheets! ('+merged.length+' placement, '+hourlyRows.length+' hora)';status.style.color='#27ae60';setTimeout(()=>{status.style.display='none'},6000);}
     render();
   } catch(e) {
@@ -336,7 +335,7 @@ function render(){
   </div>`;
 
   const tabs=['Campanhas','Placement','Diário','Comparar','ROI por Hora','📊 Análise','🚀 Nova Campanha','Importar'];
-  html+=`<div class="tabs">${tabs.map((t,i)=>`<button class="tab ${tab===i?'active':''}" onclick="S('tab',${i})">${t}</button>`).join('')}<button onclick="showSiteSelect()" style="margin-left:auto;background:#6c757d;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700">🔀 Trocar Site</button><button onclick="triggerSync()" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;margin-left:6px">🔄 Sync</button></div>`;
+  html+=`<div class="tabs">${tabs.map((t,i)=>`<button class="tab ${tab===i?'active':''}" onclick="S('tab',${i})">${t}</button>`).join('')}<button onclick="showSiteSelect()" style="margin-left:auto;background:#6c757d;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700">🔀 Trocar Site</button><button onclick="loadFromSupabase(currentSite)" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;margin-left:6px">🔄 Atualizar</button></div>`;
 
   // TAB 0: Campaigns
   if(tab===0){
@@ -891,13 +890,13 @@ function PF(file,type){
   const el=document.getElementById('s-'+type);
   readXL(file,wb=>{
     try{
-      if(type==='meta'){const rows=parseMetaExcel(wb);rawData=mergeData(rawData,[],[]); rawData=mergeData(INIT_RAW,rows,[]);
+      if(type==='meta'){const rows=parseMetaExcel(wb);rawData=mergeData(rawData,[],[]); rawData=mergeData(INIT_RAW,rows,[]);saveToSupabase(currentSite,rawData,[]);
         // Re-merge with existing GAM
         const gamRows=INIT_RAW.filter(r=>r.gr>0&&r.ms===0);rawData=mergeData(rawData,[],[]); 
         el.innerHTML=`<div style="padding:8px;background:rgba(22,163,74,.1);border-radius:6px;font-size:11px;color:var(--green);margin-top:6px">✅ ${rows.length} registros (${wb.SheetNames.join(', ')})</div>`}
-      else if(type==='gam'){const rows=parseGamExcel(wb);rawData=mergeData(rawData,[],rows);
+      else if(type==='gam'){const rows=parseGamExcel(wb);rawData=mergeData(rawData,[],rows);saveToSupabase(currentSite,rawData,[]);
         el.innerHTML=`<div style="padding:8px;background:rgba(22,163,74,.1);border-radius:6px;font-size:11px;color:var(--green);margin-top:6px">✅ ${rows.length} registros (${wb.SheetNames.join(', ')})</div>`}
-      else if(type==='hourly'){const rows=parseHourlyExcel(wb);hourlyData=rows;
+      else if(type==='hourly'){const rows=parseHourlyExcel(wb);hourlyData=rows;saveToSupabase(currentSite,[],hourlyData);
         el.innerHTML=`<div style="padding:8px;background:rgba(22,163,74,.1);border-radius:6px;font-size:11px;color:var(--green);margin-top:6px">✅ ${rows.length} registros (${wb.SheetNames.filter(s=>s!=='Resumo Geral'&&s!=='Resumo por Dia').length} campanhas)</div>`}
       st.sc='all';st.sd='all';st.tab=0;render();
     }catch(err){el.innerHTML=`<div style="padding:8px;background:rgba(220,38,38,.1);border-radius:6px;font-size:11px;color:var(--red);margin-top:6px">❌ ${err.message}</div>`}
@@ -1157,14 +1156,14 @@ function exportHTML(){
   <div style="background:#fff;border-radius:16px;padding:40px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
     <div style="text-align:center;margin-bottom:28px">
       <div style="font-size:32px;margin-bottom:8px">📊</div>
-      <h2 style="margin:0;font-size:18px;font-weight:800;color:#1a472a;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">ROI VENERA</h2>
+      <h2 style="margin:0;font-size:18px;font-weight:800;color:#1a472a">ROI VENERA</h2>
       <p style="margin:4px 0 0;font-size:12px;color:#888">Selecione o site</p>
     </div>
     <div style="display:grid;gap:10px">
-      <button onclick="selectSite('beneficioja')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;transition:all .2s;text-align:left" onmouseover="this.style.borderColor='#2d6a4f';this.style.background='#f0faf4'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='#fff'"><span style="font-size:24px">🟢</span><div><div style="font-weight:700;font-size:14px;color:#1a472a">Benefício Já</div><div style="font-size:11px;color:#888">beneficioja.com</div></div></button>
-      <button onclick="selectSite('mundocha')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;transition:all .2s;text-align:left" onmouseover="this.style.borderColor='#2d6a4f';this.style.background='#f0faf4'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='#fff'"><span style="font-size:24px">🍵</span><div><div style="font-weight:700;font-size:14px;color:#1a472a">Mundo Chá</div><div style="font-size:11px;color:#888">mundocha.com</div></div></button>
-      <button onclick="selectSite('felino')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;transition:all .2s;text-align:left" onmouseover="this.style.borderColor='#2d6a4f';this.style.background='#f0faf4'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='#fff'"><span style="font-size:24px">🌿</span><div><div style="font-weight:700;font-size:14px;color:#1a472a">Felino Saudável</div><div style="font-size:11px;color:#888">Em breve</div></div></button>
-      <button onclick="selectSite('jovem')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;transition:all .2s;text-align:left" onmouseover="this.style.borderColor='#2d6a4f';this.style.background='#f0faf4'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='#fff'"><span style="font-size:24px">🔮</span><div><div style="font-weight:700;font-size:14px;color:#1a472a">Jovem Mística</div><div style="font-size:11px;color:#888">Em breve</div></div></button>
+      <button onclick="selectSite('beneficioja')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;text-align:left" onmouseover="this.style.borderColor='#2d6a4f'" onmouseout="this.style.borderColor='#e0e0e0'"><span style="font-size:24px">🟢</span><div><div style="font-weight:700;color:#1a472a">Benefício Já</div><div style="font-size:11px;color:#888">beneficioja.com</div></div></button>
+      <button onclick="selectSite('mundocha')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;text-align:left" onmouseover="this.style.borderColor='#2d6a4f'" onmouseout="this.style.borderColor='#e0e0e0'"><span style="font-size:24px">🍵</span><div><div style="font-weight:700;color:#1a472a">Mundo Chá</div><div style="font-size:11px;color:#888">mundocha.com</div></div></button>
+      <button onclick="selectSite('felino')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;text-align:left" onmouseover="this.style.borderColor='#2d6a4f'" onmouseout="this.style.borderColor='#e0e0e0'"><span style="font-size:24px">🌿</span><div><div style="font-weight:700;color:#1a472a">Felino Saudável</div><div style="font-size:11px;color:#888">Em breve</div></div></button>
+      <button onclick="selectSite('jovem')" style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;text-align:left" onmouseover="this.style.borderColor='#2d6a4f'" onmouseout="this.style.borderColor='#e0e0e0'"><span style="font-size:24px">🔮</span><div><div style="font-weight:700;color:#1a472a">Jovem Mística</div><div style="font-size:11px;color:#888">Em breve</div></div></button>
     </div>
   </div>
 </div>
