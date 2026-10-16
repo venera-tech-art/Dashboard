@@ -137,6 +137,193 @@ function checkAuth(){
 }
 
 
+
+// === ADSELETO API CONFIG ===
+const ADSELETO_API = 'https://external.adseleto.com';
+const ADSELETO_NETWORK = '22925918110';
+const ADSELETO_KEY = 'ads_GVIqzQhvoSMTqoFtUbzhAgsA3MSb58GHnCBjtweJ5Rk1eC8tLR3ldX7c';
+const SITE_DOMAINS = {
+  beneficioja: 'beneficioja.com',
+  mundocha: 'mundocha.com',
+  felino: '',
+  jovem: '',
+};
+
+async function fetchAdSeletoReport(siteDomain, body) {
+  const url = `${ADSELETO_API}/report/network/${ADSELETO_NETWORK}/site/${siteDomain}`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${ADSELETO_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) throw new Error('API erro ' + resp.status);
+  return resp.json();
+}
+
+async function fetchAdSeletoAsync(siteDomain, body) {
+  const url = `${ADSELETO_API}/report/network/${ADSELETO_NETWORK}/site/${siteDomain}/async`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${ADSELETO_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) throw new Error('API erro ' + resp.status);
+  const job = await resp.json();
+  
+  // Poll for result
+  const jobUrl = `${ADSELETO_API}/report/network/${ADSELETO_NETWORK}/job/${job.job_id}`;
+  const maxWait = 120000; // 2 min
+  const start = Date.now();
+  while (Date.now() - start < maxWait) {
+    await new Promise(r => setTimeout(r, (job.retry_after || 15) * 1000));
+    const check = await fetch(jobUrl, { headers: { 'Authorization': `Bearer ${ADSELETO_KEY}` } });
+    if (check.status === 200) return check.json();
+    if (check.status !== 202) throw new Error('Job erro ' + check.status);
+  }
+  throw new Error('Timeout aguardando relatório');
+}
+
+async function loadGAMFromAPI() {
+  const domain = SITE_DOMAINS[currentSite];
+  if (!domain) return;
+  
+  const status = document.getElementById('sync-status');
+  if (status) { status.textContent = '⏳ Carregando receita GAM via API...'; status.style.display = 'block'; status.style.color = '#f39c12'; }
+  
+  try {
+    // Fetch placement data (last 30 days with custom criteria for utm)
+    const placementBody = {
+      date_range: { type: 'LAST_MONTH' },
+      dimensions: ['DATE', 'CUSTOM_CRITERIA'],
+      columns: [
+        'AD_EXCHANGE_LINE_ITEM_LEVEL_IMPRESSIONS',
+        'AD_EXCHANGE_LINE_ITEM_LEVEL_REVENUE',
+        'AD_EXCHANGE_LINE_ITEM_LEVEL_CLICKS',
+        'AD_EXCHANGE_LINE_ITEM_LEVEL_AVERAGE_ECPM'
+      ],
+      report_currency: 'BRL',
+      ad_unit_view: 'FLAT'
+    };
+    
+    if (status) status.textContent = '⏳ Buscando dados de placement...';
+    let placementData;
+    try {
+      placementData = await fetchAdSeletoReport(domain, placementBody);
+    } catch(e) {
+      // Try async if sync fails
+      placementData = await fetchAdSeletoAsync(domain, placementBody);
+    }
+    
+    // Parse placement data
+    if (placementData && placementData.data) {
+      const hdr = placementData.headers;
+      const dateIdx = hdr.indexOf('Dimension.DATE');
+      const ccIdx = hdr.indexOf('Dimension.CUSTOM_CRITERIA');
+      const impIdx = hdr.findIndex(h => h.includes('IMPRESSIONS'));
+      const revIdx = hdr.findIndex(h => h.includes('REVENUE'));
+      const clickIdx = hdr.findIndex(h => h.includes('CLICKS'));
+      
+      const gamRows = [];
+      placementData.data.forEach(row => {
+        const cc = row[ccIdx] || '';
+        if (!cc.includes('utm_content=')) return;
+        const val = cc.split('utm_content=')[1] || '';
+        // Extract placement from utm_content
+        const parts = val.split('_');
+        let placement = 'Outros';
+        if (parts.length > 1) {
+          const plKey = parts.slice(1).join('_');
+          const plMap = {
+            'facebook_mobile_feed': 'Feed Facebook', 'Facebook_Mobile_Feed': 'Feed Facebook',
+            'facebook_marketplace': 'Marketplace', 'Facebook_Marketplace': 'Marketplace',
+            'facebook_mobile_reels': 'Facebook Reels', 'Facebook_Mobile_Reels': 'Facebook Reels',
+            'facebook_stories': 'Facebook Stories', 'Facebook_Stories': 'Facebook Stories',
+            'instagram_feed': 'Feed Instagram', 'Instagram_Feed': 'Feed Instagram',
+            'instagram_reels': 'Instagram Reels', 'Instagram_Reels': 'Instagram Reels',
+            'instagram_stories': 'Instagram Stories', 'Instagram_Stories': 'Instagram Stories',
+          };
+          placement = plMap[plKey] || plKey;
+        }
+        const rev = parseFloat(row[revIdx] || '0') / 1000000; // GAM reports revenue in micros
+        const imps = parseInt(row[impIdx] || '0');
+        if (rev > 0) {
+          gamRows.push({ c: currentSite, d: row[dateIdx], p: placement, ms: 0, mc: 0, mi: imps, gr: Math.round(rev * 10000) / 10000 });
+        }
+      });
+      
+      // Merge with existing rawData (keep Meta spend, add GAM revenue)
+      gamRows.forEach(gr => {
+        const existing = rawData.find(r => r.d === gr.d && r.p === gr.p);
+        if (existing) {
+          existing.gr += gr.gr;
+        } else {
+          rawData.push(gr);
+        }
+      });
+    }
+    
+    // Fetch hourly data
+    if (status) status.textContent = '⏳ Buscando dados por hora...';
+    const hourlyBody = {
+      date_range: { type: 'LAST_MONTH' },
+      dimensions: ['DATE', 'HOUR'],
+      columns: [
+        'AD_EXCHANGE_LINE_ITEM_LEVEL_IMPRESSIONS',
+        'AD_EXCHANGE_LINE_ITEM_LEVEL_REVENUE'
+      ],
+      report_currency: 'BRL',
+      ad_unit_view: 'FLAT'
+    };
+    
+    let hourlyReport;
+    try {
+      hourlyReport = await fetchAdSeletoReport(domain, hourlyBody);
+    } catch(e) {
+      hourlyReport = await fetchAdSeletoAsync(domain, hourlyBody);
+    }
+    
+    if (hourlyReport && hourlyReport.data) {
+      const hdr = hourlyReport.headers;
+      const dateIdx = hdr.indexOf('Dimension.DATE');
+      const hourIdx = hdr.indexOf('Dimension.HOUR');
+      const revIdx = hdr.findIndex(h => h.includes('REVENUE'));
+      
+      const hRows = [];
+      hourlyReport.data.forEach(row => {
+        const rev = parseFloat(row[revIdx] || '0') / 1000000;
+        if (rev > 0) {
+          hRows.push({ c: currentSite, d: row[dateIdx], h: parseInt(row[hourIdx]), s: 0, r: Math.round(rev * 10000) / 10000 });
+        }
+      });
+      
+      if (hRows.length > 0) {
+        hourlyData = hRows;
+      }
+    }
+    
+    if (status) { 
+      status.textContent = '✅ Dados GAM carregados via API AdSeleto!'; 
+      status.style.color = '#27ae60'; 
+      setTimeout(() => { status.style.display = 'none'; }, 5000); 
+    }
+    render();
+    
+  } catch(e) {
+    console.error('Erro API AdSeleto:', e);
+    if (status) { 
+      status.textContent = '⚠️ Erro ao carregar API: ' + e.message; 
+      status.style.color = '#e74c3c'; 
+      setTimeout(() => { status.style.display = 'none'; }, 8000); 
+    }
+  }
+}
+
 const SITES = {
   beneficioja: { name: 'Benefício Já', domain: 'beneficioja.com', emoji: '🟢' },
   mundocha: { name: 'Mundo Chá', domain: 'mundocha.com', emoji: '🍵' },
@@ -155,6 +342,7 @@ function selectSite(siteKey) {
     rawData = []; hourlyData = [];
   }
   render();
+  loadGAMFromAPI();
 }
 function showSiteSelect() {
   document.getElementById('app').style.display = 'none';
@@ -240,7 +428,7 @@ function render(){
   </div>`;
 
   const tabs=['Campanhas','Placement','Diário','Comparar','ROI por Hora','📊 Análise','🚀 Nova Campanha','Importar'];
-  html+=`<div class="tabs">${tabs.map((t,i)=>`<button class="tab ${tab===i?'active':''}" onclick="S('tab',${i})">${t}</button>`).join('')}<button onclick="showSiteSelect()" style="margin-left:auto;background:#6c757d;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700">🔀 Trocar Site</button><button onclick="loadSheetsData()" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;margin-left:6px">🔄 Sync</button></div>`;
+  html+=`<div class="tabs">${tabs.map((t,i)=>`<button class="tab ${tab===i?'active':''}" onclick="S('tab',${i})">${t}</button>`).join('')}<button onclick="showSiteSelect()" style="margin-left:auto;background:#6c757d;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700">🔀 Trocar Site</button><button onclick="loadGAMFromAPI()" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;margin-left:6px">🔄 Sync GAM</button></div>`;
 
   // TAB 0: Campaigns
   if(tab===0){
