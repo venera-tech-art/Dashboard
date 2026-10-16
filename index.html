@@ -164,16 +164,22 @@ async function loadGAMFromSupabase() {
     const dailyRows = await dailyResp.json();
     
     if (dailyRows.length > 0) {
-      const gamData = dailyRows.map(r => ({
-        c: currentSite, d: r.date, p: r.placement,
-        ms: 0, mc: 0, mi: r.impressions || 0,
-        gr: parseFloat(r.revenue) || 0
-      }));
-      // Merge with existing rawData (Meta spend)
-      gamData.forEach(gr => {
-        const existing = rawData.find(r => r.d === gr.d && r.p === gr.p);
-        if (existing) { existing.gr = gr.gr; existing.mi = Math.max(existing.mi, gr.mi); }
-        else { rawData.push(gr); }
+      dailyRows.forEach(r => {
+        const rev = parseFloat(r.revenue) || 0;
+        if (rev <= 0) return;
+        // Find matching Meta row by date + placement
+        const match = rawData.find(m => m.d === r.date && m.p === r.placement && m.ms > 0);
+        if (match) {
+          match.gr = rev;
+        } else {
+          // Find any Meta campaign active on this date
+          const anyMatch = rawData.find(m => m.d === r.date && m.ms > 0);
+          const campName = anyMatch ? anyMatch.c : (ACTIVE.length > 0 ? ACTIVE[0] : rawData.length > 0 ? rawData[0].c : domain);
+          // Check if already exists
+          const exists = rawData.find(m => m.d === r.date && m.p === r.placement && m.c === campName);
+          if (exists) { exists.gr = rev; }
+          else { rawData.push({ c: campName, d: r.date, p: r.placement, ms: 0, mc: 0, mi: r.impressions || 0, gr: rev }); }
+        }
       });
     }
     
@@ -184,8 +190,10 @@ async function loadGAMFromSupabase() {
     const hourlyRows = await hourlyResp.json();
     
     if (hourlyRows.length > 0) {
+      // Use the main active campaign name for hourly data
+      const mainCamp = ACTIVE.length > 0 ? ACTIVE[0] : rawData.length > 0 ? rawData[0].c : domain;
       hourlyData = hourlyRows.map(r => ({
-        c: currentSite, d: r.date, h: r.hour,
+        c: mainCamp, d: r.date, h: r.hour,
         s: 0, r: parseFloat(r.revenue) || 0
       }));
     }
