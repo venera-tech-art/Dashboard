@@ -207,6 +207,119 @@ function render(){
 
   // TAB 0: Campaigns
   if(tab===0){
+    
+    // === SAÚDE DA CAMPANHA ===
+    const healthCamps=ACTIVE.length>0?ACTIVE:[...new Set(rawData.map(r=>r.c))];
+    const healthDates=[...new Set(rawData.map(r=>r.d))].sort();
+    const nDaysRunning=healthDates.length;
+    
+    if(nDaysRunning>=2){
+      healthCamps.forEach(camp=>{
+        const cData=rawData.filter(r=>r.c===camp);
+        const cDates=[...new Set(cData.map(r=>r.d))].sort();
+        if(cDates.length<2)return;
+        
+        // Daily ROAS trend
+        const dailyRoas=cDates.map(d=>{
+          const dr=cData.filter(r=>r.d===d);
+          const s=dr.reduce((a,r)=>a+r.ms,0);
+          const r=dr.reduce((a,r)=>a+r.gr,0);
+          return{d,s,r,roas:s>0?r/s:0,cpc:dr.reduce((a,r)=>a+r.mc,0)>0?s/dr.reduce((a,r)=>a+r.mc,0):0};
+        });
+        
+        const totalS=cData.reduce((a,r)=>a+r.ms,0);
+        const totalR=cData.reduce((a,r)=>a+r.gr,0);
+        const totalC=cData.reduce((a,r)=>a+r.mc,0);
+        const avgRoas=totalS>0?totalR/totalS:0;
+        const avgCPC=totalC>0?totalS/totalC:0;
+        const avgRPU=totalC>0?totalR/totalC:0;
+        
+        // Trend: compare last day vs first day
+        const firstRoas=dailyRoas[0].roas;
+        const lastRoas=dailyRoas[dailyRoas.length-1].roas;
+        const trend=lastRoas-firstRoas;
+        const trendPct=firstRoas>0?(trend/firstRoas*100):0;
+        
+        // CPC trend
+        const firstCPC=dailyRoas[0].cpc;
+        const lastCPC=dailyRoas[dailyRoas.length-1].cpc;
+        const cpcTrend=lastCPC-firstCPC;
+        
+        // Last 2 days trend
+        const last2=dailyRoas.slice(-2);
+        const recentTrend=last2.length===2?last2[1].roas-last2[0].roas:0;
+        
+        // Health score (0-100)
+        let score=50;
+        if(avgRoas>=0.8)score+=30;else if(avgRoas>=0.5)score+=15;else if(avgRoas>=0.3)score+=5;else score-=15;
+        if(trend>0)score+=15;else if(trend<-0.1)score-=15;
+        if(recentTrend>0)score+=10;else if(recentTrend<0)score-=10;
+        if(cpcTrend<0)score+=5;else if(cpcTrend>0.02)score-=10;
+        if(nDaysRunning>=5&&avgRoas<0.3)score-=20;
+        score=Math.max(0,Math.min(100,score));
+        
+        // Status
+        let status,statusColor,statusBg,action,icon;
+        if(score>=70){status='SAUDÁVEL';statusColor='#155724';statusBg='#d4edda';action='Manter rodando. Performance estável ou melhorando.';icon='💚'}
+        else if(score>=50){status='ATENÇÃO';statusColor='#856404';statusBg='#fff3cd';action='Monitorar nos próximos 2 dias. Aplicar dayparting se não melhorar.';icon='💛'}
+        else if(score>=30){status='CRÍTICO';statusColor='#721c24';statusBg='#f8d7da';action='Aplicar otimizações AGORA (dayparting + concentrar placement). Se não melhorar em 2 dias, pausar.';icon='🧡'}
+        else{status='PAUSAR';statusColor='#721c24';statusBg='#f8d7da';action='Campanha não é viável nesta configuração. Pausar e criar nova com criativos/público diferente.';icon='❤️‍🩹'}
+        
+        html+=`<div class="card" style="border-top:4px solid ${score>=50?'var(--green)':'var(--red)'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="margin:0">${icon} Saúde: ${camp}</h3>
+            <div style="background:${statusBg};color:${statusColor};padding:6px 16px;border-radius:20px;font-size:13px;font-weight:800">${status}</div>
+          </div>
+          
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px">
+            <div style="text-align:center;padding:10px;background:var(--bg);border-radius:8px">
+              <div style="font-size:10px;color:var(--muted);font-weight:700">SCORE</div>
+              <div style="font-size:22px;font-weight:800;color:${score>=50?'var(--green)':'var(--red)'}">${score}</div>
+              <div style="font-size:9px;color:var(--muted)">de 100</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:var(--bg);border-radius:8px">
+              <div style="font-size:10px;color:var(--muted);font-weight:700">DIAS</div>
+              <div style="font-size:22px;font-weight:800">${cDates.length}</div>
+              <div style="font-size:9px;color:var(--muted)">rodando</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:var(--bg);border-radius:8px">
+              <div style="font-size:10px;color:var(--muted);font-weight:700">ROAS</div>
+              <div style="font-size:22px;font-weight:800;color:${avgRoas>=0.5?'var(--green)':'var(--red)'}">${avgRoas.toFixed(2)}x</div>
+              <div style="font-size:9px;color:var(--muted)">média</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:var(--bg);border-radius:8px">
+              <div style="font-size:10px;color:var(--muted);font-weight:700">TENDÊNCIA</div>
+              <div style="font-size:22px;font-weight:800;color:${trend>=0?'var(--green)':'var(--red)'}">${trend>=0?'↑':'↓'}</div>
+              <div style="font-size:9px;color:${trend>=0?'var(--green)':'var(--red)'}">${trendPct>=0?'+':''}${trendPct.toFixed(0)}%</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:var(--bg);border-radius:8px">
+              <div style="font-size:10px;color:var(--muted);font-weight:700">CPC</div>
+              <div style="font-size:22px;font-weight:800">${fmt(avgCPC)}</div>
+              <div style="font-size:9px;color:${cpcTrend<=0?'var(--green)':'var(--red)'}">${cpcTrend<=0?'↓ caindo':'↑ subindo'}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:4px;margin-bottom:12px">`;
+        dailyRoas.forEach(dr=>{
+          const w=100/dailyRoas.length;
+          const barH=Math.max(8,Math.min(40,dr.roas*80));
+          html+=`<div style="flex:1;text-align:center" title="${dr.d}: ROAS ${dr.roas.toFixed(2)}x">
+            <div style="height:40px;display:flex;align-items:flex-end;justify-content:center">
+              <div style="width:100%;height:${barH}px;background:${dr.roas>=0.4?'var(--green)':'var(--red)'};border-radius:3px 3px 0 0;min-height:4px"></div>
+            </div>
+            <div style="font-size:9px;color:var(--muted);margin-top:2px">${dr.d.slice(5)}</div>
+            <div style="font-size:10px;font-weight:700;color:${dr.roas>=0.4?'var(--green)':'var(--red)'}"> ${dr.roas.toFixed(2)}x</div>
+          </div>`;
+        });
+        html+=`</div>
+
+          <div style="background:${statusBg};padding:12px;border-radius:8px;font-size:12px;color:${statusColor};line-height:1.6">
+            <b>Ação recomendada:</b> ${action}
+          </div>
+        </div>`;
+      });
+    }
+
     html+=`<div class="card"><h3>Resumo por Campanha</h3><div class="scroll"><table><thead><tr><th class="left">Campanha</th><th>Gasto</th><th>Cliques</th><th>Receita</th><th>Lucro</th><th>ROI</th><th>ROAS</th><th>Status</th></tr></thead><tbody>`;
     const sortedCamps=[...d.campTotal].sort((a,b)=>{const aA=ACTIVE.includes(a.c)?0:1;const bA=ACTIVE.includes(b.c)?0:1;if(aA!==bA)return aA-bA;return a.c.localeCompare(b.c,undefined,{numeric:true})});
     sortedCamps.forEach(r=>{const isActive=ACTIVE.includes(r.c);html+=`<tr class="${r.profit>0?'pr':''}"><td style="font-weight:700">${dot(r.c)}${r.c} <span onclick="toggleActive('${r.c}')" style="font-size:9px;background:${isActive?'var(--green)':'var(--border)'};color:${isActive?'#fff':'var(--muted)'};padding:1px 5px;border-radius:3px;cursor:pointer;user-select:none" title="Clique pra ${isActive?'desativar':'ativar'}">${isActive?'ATIVA':'INATIVA'}</span></td><td class="mono right">${fmt(r.ms)}</td><td class="mono right">${r.mc}</td><td class="mono right" style="color:var(--green)">${fmt(r.gr)}</td><td class="mono right" style="font-weight:700;color:${r.profit>=0?'var(--green)':'var(--red)'}">${fmt(r.profit)}</td><td class="right">${badge(r.roi)}</td><td class="right">${badge(r.roas,'roas')}</td><td style="text-align:center">${r.profit>0?'🟢':r.roas>=0.8?'🟡':'🔴'}</td></tr>`});
