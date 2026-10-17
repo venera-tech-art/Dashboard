@@ -622,6 +622,213 @@ function render(){
 
 
 
+
+    // === RELATÓRIO DETALHADO ===
+    const repDates=rawData.map(r=>r.d).filter((v,i,a)=>a.indexOf(v)===i).sort();
+    const repCamps=rawData.filter(r=>filterCamps?filterCamps.includes(r.c):true);
+    const repTotalS=repCamps.reduce((a,r)=>a+r.ms,0);
+    const repTotalR=repCamps.reduce((a,r)=>a+r.gr,0);
+    const repTotalC=repCamps.reduce((a,r)=>a+r.mc,0);
+    const repCPC=repTotalC>0?repTotalS/repTotalC:0;
+    const repRPU=repTotalC>0?repTotalR/repTotalC:0;
+    const repROAS=repTotalS>0?repTotalR/repTotalS:0;
+
+    html+=`<div class="card" style="border-top:3px solid #6c5ce7">
+      <h3>📋 Relatório Estratégico Detalhado</h3>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:16px">Análise completa com métricas-chave e recomendações acionáveis</p>
+
+      <div style="background:var(--bg);border-radius:10px;padding:16px;margin-bottom:16px">
+        <h4 style="margin:0 0 12px;font-size:13px;color:var(--text)">📊 Métricas-Chave da Operação</h4>
+        <div class="kpis">
+          <div class="kpi"><div class="kpi-label">CPC Médio</div><div class="kpi-value">${fmt(repCPC)}</div><div class="kpi-sub">Custo por clique</div></div>
+          <div class="kpi"><div class="kpi-label">RPU</div><div class="kpi-value" style="color:${repRPU>=repCPC?'var(--green)':'var(--red)'}">${fmt(repRPU)}</div><div class="kpi-sub">Receita por usuário</div></div>
+          <div class="kpi"><div class="kpi-label">Gap CPC vs RPU</div><div class="kpi-value" style="color:var(--red)">${fmt(repCPC-repRPU)}</div><div class="kpi-sub">Precisa fechar pra lucrar</div></div>
+          <div class="kpi"><div class="kpi-label">Break-even CPC</div><div class="kpi-value" style="color:var(--green)">${fmt(repRPU)}</div><div class="kpi-sub">CPC máximo lucrativo</div></div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg);border-radius:10px;padding:16px;margin-bottom:16px">
+        <h4 style="margin:0 0 12px;font-size:13px;color:var(--text)">📅 Tendência Diária</h4>
+        <div class="scroll"><table><thead><tr><th class="left">Data</th><th>Gasto</th><th>Receita</th><th>Lucro</th><th>ROAS</th><th>Cliques</th><th>CPC</th><th>RPU</th></tr></thead><tbody>`;
+    repDates.forEach(day=>{
+      const dr=repCamps.filter(r=>r.d===day);
+      const ds=dr.reduce((a,r)=>a+r.ms,0);
+      const drv=dr.reduce((a,r)=>a+r.gr,0);
+      const dc=dr.reduce((a,r)=>a+r.mc,0);
+      const dRoas=ds>0?drv/ds:0;
+      const dCpc=dc>0?ds/dc:0;
+      const dRpu=dc>0?drv/dc:0;
+      html+=`<tr>
+        <td style="font-weight:600">${day}</td>
+        <td class="right">${fmt(ds)}</td>
+        <td class="right" style="color:var(--green)">${fmt(drv)}</td>
+        <td class="right" style="color:${drv-ds>=0?'var(--green)':'var(--red)'}">${fmt(drv-ds)}</td>
+        <td class="right">${badge(dRoas,'roas')}</td>
+        <td class="mono right">${dc}</td>
+        <td class="mono right">${fmt(dCpc)}</td>
+        <td class="mono right" style="color:${dRpu>=dCpc?'var(--green)':'var(--red)'}">${fmt(dRpu)}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div></div>
+
+      <div style="background:var(--bg);border-radius:10px;padding:16px;margin-bottom:16px">
+        <h4 style="margin:0 0 12px;font-size:13px;color:var(--text)">📍 Performance por Placement</h4>
+        <div class="scroll"><table><thead><tr><th class="left">Placement</th><th>Gasto</th><th>% Budget</th><th>Receita</th><th>ROAS</th><th>Cliques</th><th>CPC</th><th>RPU</th><th>Veredicto</th></tr></thead><tbody>`;
+    const plAgg2={};
+    repCamps.forEach(r=>{
+      if(!plAgg2[r.p])plAgg2[r.p]={ms:0,gr:0,mc:0,mi:0};
+      plAgg2[r.p].ms+=r.ms;plAgg2[r.p].gr+=r.gr;plAgg2[r.p].mc+=r.mc;plAgg2[r.p].mi+=r.mi;
+    });
+    Object.entries(plAgg2).sort((a,b)=>(b[1].gr/b[1].ms||0)-(a[1].gr/a[1].ms||0)).forEach(([p,v])=>{
+      const roas=v.ms>0?v.gr/v.ms:0;
+      const cpc=v.mc>0?v.ms/v.mc:0;
+      const rpu=v.mc>0?v.gr/v.mc:0;
+      const pctB=repTotalS>0?v.ms/repTotalS*100:0;
+      const verdict=roas>=0.8?'🟢 Manter':roas>=0.4?'🟡 Otimizar':'🔴 Reduzir';
+      html+=`<tr>
+        <td style="font-weight:600">${p}</td>
+        <td class="right">${fmt(v.ms)}</td>
+        <td class="mono right">${pctB.toFixed(0)}%</td>
+        <td class="right" style="color:var(--green)">${fmt(v.gr)}</td>
+        <td class="right">${badge(roas,'roas')}</td>
+        <td class="mono right">${v.mc}</td>
+        <td class="mono right">${fmt(cpc)}</td>
+        <td class="mono right" style="color:${rpu>=cpc?'var(--green)':'var(--red)'}">${fmt(rpu)}</td>
+        <td style="font-size:12px">${verdict}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div></div>
+
+      <div style="background:var(--bg);border-radius:10px;padding:16px;margin-bottom:16px">
+        <h4 style="margin:0 0 12px;font-size:13px;color:var(--text)">⏰ Horas Classificadas por Rentabilidade</h4>`;
+    // Aggregate hourly
+    const hAgg2={};
+    const fHourly=hourlyData.filter(r=>filterCamps?filterCamps.includes(r.c):true);
+    fHourly.forEach(r=>{
+      if(!hAgg2[r.h])hAgg2[r.h]={s:0,r:0,n:0};
+      hAgg2[r.h].s+=r.s;hAgg2[r.h].r+=r.r;hAgg2[r.h].n++;
+    });
+    const hSorted=Object.entries(hAgg2).map(([h,v])=>({h:+h,s:v.s,r:v.r,n:v.n,p:v.r-v.s,roas:v.s>0?v.r/v.s:0})).sort((a,b)=>b.p-a.p);
+    const profitable=hSorted.filter(r=>r.p>0);
+    const nearBE=hSorted.filter(r=>r.p<=0&&r.roas>=0.5);
+    const burning=hSorted.filter(r=>r.p<=0&&r.roas<0.5);
+    const burnTotal=burning.reduce((a,r)=>a+Math.abs(r.p),0);
+
+    html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="text-align:center;padding:12px;background:#d4edda;border-radius:8px">
+        <div style="font-size:20px;font-weight:800;color:#155724">${profitable.length}</div>
+        <div style="font-size:11px;color:#155724">Lucrativas</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:#fff3cd;border-radius:8px">
+        <div style="font-size:20px;font-weight:800;color:#856404">${nearBE.length}</div>
+        <div style="font-size:11px;color:#856404">Quase break-even</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:#f8d7da;border-radius:8px">
+        <div style="font-size:20px;font-weight:800;color:#721c24">${burning.length}</div>
+        <div style="font-size:11px;color:#721c24">Queimando R$${burnTotal.toFixed(2)}</div>
+      </div>
+    </div>`;
+
+    html+=`<div class="scroll"><table><thead><tr><th>Hora</th><th>Gasto</th><th>Receita</th><th>Lucro</th><th>ROAS</th><th>Dias</th><th>Status</th><th>Ação</th></tr></thead><tbody>`;
+    hSorted.forEach(r=>{
+      const status=r.p>0?'🟢':r.roas>=0.5?'🟡':'🔴';
+      const acao=r.p>0?'Manter/Aumentar':r.roas>=0.5?'Monitorar':r.roas>=0.3?'Reduzir budget':'Pausar';
+      html+=`<tr>
+        <td style="font-weight:700;font-family:monospace">${String(r.h).padStart(2,'0')}:00</td>
+        <td class="right">${fmt(r.s)}</td>
+        <td class="right" style="color:var(--green)">${fmt(r.r)}</td>
+        <td class="right" style="color:${r.p>=0?'var(--green)':'var(--red)'}">R$${r.p.toFixed(2)}</td>
+        <td class="right">${badge(r.roas,'roas')}</td>
+        <td class="mono right">${r.n}</td>
+        <td>${status}</td>
+        <td style="font-size:11px;font-weight:600">${acao}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div></div>
+
+      <div style="background:var(--bg);border-radius:10px;padding:16px;margin-bottom:16px">
+        <h4 style="margin:0 0 12px;font-size:13px;color:var(--text)">💡 Simulações de Otimização</h4>`;
+    // Scenario 1: Cut worst hours
+    const cutHours=burning.filter(r=>r.roas<0.3).map(r=>r.h);
+    const savedBurn=burning.filter(r=>r.roas<0.3).reduce((a,r)=>a+Math.abs(r.p),0);
+    const keptS=hSorted.filter(r=>!cutHours.includes(r.h)).reduce((a,r)=>a+r.s,0);
+    const keptR=hSorted.filter(r=>!cutHours.includes(r.h)).reduce((a,r)=>a+r.r,0);
+    const keptRoas=keptS>0?keptR/keptS:0;
+
+    // Scenario 2: Best placement only
+    const bestPl=Object.entries(plAgg2).sort((a,b)=>(b[1].gr/b[1].ms||0)-(a[1].gr/a[1].ms||0))[0];
+    const bpRoas=bestPl?bestPl[1].gr/bestPl[1].ms:0;
+
+    html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:var(--card);padding:14px;border-radius:8px;border-left:4px solid var(--green)">
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px">Cenário 1: Pausar horas ROAS < 0.3x</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8">
+          Pausar: ${cutHours.map(h=>String(h).padStart(2,'0')+'h').join(', ')}<br>
+          Economia: <b style="color:var(--green)">R$${savedBurn.toFixed(2)}</b><br>
+          ROAS atual: ${repROAS.toFixed(2)}x → <b style="color:var(--green)">${keptRoas.toFixed(2)}x</b>
+        </div>
+      </div>
+      <div style="background:var(--card);padding:14px;border-radius:8px;border-left:4px solid #6c5ce7">
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px">Cenário 2: Concentrar no ${bestPl?bestPl[0]:'melhor'}</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8">
+          ROAS desse placement: <b style="color:var(--green)">${bpRoas.toFixed(2)}x</b><br>
+          Se todo budget fosse aqui:<br>
+          Receita estimada: <b>R$${(repTotalS*bpRoas).toFixed(2)}</b>
+        </div>
+      </div>
+    </div></div>
+
+      <div style="background:#2d3436;border-radius:10px;padding:16px">
+        <h4 style="margin:0 0 12px;font-size:13px;color:#dfe6e9">🎯 Recomendações Prioritárias</h4>
+        <div style="font-size:12px;color:#b2bec3;line-height:2">
+          <div style="padding:8px 12px;background:rgba(39,174,96,.15);border-radius:6px;margin-bottom:6px">
+            <b style="color:#27ae60">1. DAYPARTING</b> — Pausar horas ${cutHours.slice(0,5).map(h=>String(h).padStart(2,'0')+'h').join(', ')}. Economia estimada de R$${(savedBurn/repDates.length).toFixed(2)}/dia.
+          </div>
+          <div style="padding:8px 12px;background:rgba(108,92,231,.15);border-radius:6px;margin-bottom:6px">
+            <b style="color:#6c5ce7">2. PLACEMENT</b> — Concentrar budget no ${bestPl?bestPl[0]:'-'} (ROAS ${bpRoas.toFixed(2)}x). Reduzir placements com ROAS < 0.3x.
+          </div>
+          <div style="padding:8px 12px;background:rgba(0,184,148,.15);border-radius:6px;margin-bottom:6px">
+            <b style="color:#00b894">3. MONETIZAÇÃO</b> — Aumentar pageviews/sessão no site. RPU atual R$${repRPU.toFixed(4)} precisa chegar a R$${repCPC.toFixed(4)} (CPC). Cada página extra por visita ajuda.
+          </div>
+          <div style="padding:8px 12px;background:rgba(253,203,110,.15);border-radius:6px">
+            <b style="color:#fdcb6e">4. CRIATIVO</b> — Testar novos criativos no ${bestPl?bestPl[0]:'-'}. O público que vem por esse placement monetiza melhor.
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+    // Copyable report
+    const reportText=`📋 RELATÓRIO ROI — VENERA / Benefício Já
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 Período: ${repDates[0]} a ${repDates[repDates.length-1]} (${repDates.length} dias)
+
+💰 RESUMO
+  Gasto: R$${repTotalS.toFixed(2)}
+  Receita: R$${repTotalR.toFixed(2)}
+  Lucro: R$${(repTotalR-repTotalS).toFixed(2)}
+  ROAS: ${repROAS.toFixed(2)}x
+  CPC: R$${repCPC.toFixed(4)}
+  RPU: R$${repRPU.toFixed(4)}
+  Gap: R$${(repCPC-repRPU).toFixed(4)}
+
+⏰ HORAS LUCRATIVAS: ${profitable.map(r=>String(r.h).padStart(2,'0')+'h ('+r.roas.toFixed(2)+'x)').join(', ')||'Nenhuma'}
+⏰ PAUSAR: ${cutHours.map(h=>String(h).padStart(2,'0')+'h').join(', ')}
+
+🎯 AÇÕES:
+  1. Dayparting — pausar ${cutHours.length} horas, economia ~R$${(savedBurn/repDates.length).toFixed(2)}/dia
+  2. Concentrar no ${bestPl?bestPl[0]:'-'} (ROAS ${bpRoas.toFixed(2)}x)
+  3. Aumentar pageviews/sessão no site
+  4. Testar novos criativos
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+    html+=`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="margin:0">📋 Relatório Copiável</h3>
+        <button onclick="navigator.clipboard.writeText(\`${reportText.replace(/`/g,'\\`')}\`).then(()=>{this.textContent='✅ Copiado!';setTimeout(()=>{this.textContent='📋 Copiar'},2000)})" class="btn btn-green" style="font-size:12px;padding:6px 14px">📋 Copiar</button>
+      </div>
+      <pre style="background:var(--bg);padding:14px;border-radius:8px;font-size:11px;white-space:pre-wrap;line-height:1.6;max-height:400px;overflow-y:auto">${reportText}</pre>
+    </div>`;
+
   }
 
   // TAB 6: Nova Campanha
