@@ -833,80 +833,153 @@ function render(){
 
   // TAB 6: Nova Campanha
   if(tab===6){
-    const filterCampsGen=ACTIVE;
-    const byPGen={};
-    rawData.forEach(r=>{
-      if(!filterCampsGen.includes(r.c))return;
-      if(!byPGen[r.p])byPGen[r.p]={p:r.p,spend:0,revenue:0};
-      byPGen[r.p].spend+=r.ms;byPGen[r.p].revenue+=r.gr;
-    });
-    const plGen=Object.values(byPGen).map(r=>({...r,roas:r.spend>0?r.revenue/r.spend:0,profit:r.revenue-r.spend})).sort((a,b)=>b.roas-a.roas);
-    const goodPl=plGen.filter(r=>r.roas>=1.0&&r.spend>1);
-    const testPl=plGen.filter(r=>r.roas>=0.85&&r.roas<1.0&&r.spend>1);
-    const badPl=plGen.filter(r=>r.roas<0.85||r.spend<=1);
+    const cGen=ACTIVE;
+    const byP={};
+    rawData.forEach(r=>{if(!cGen.includes(r.c))return;if(!byP[r.p])byP[r.p]={p:r.p,s:0,r:0,c:0};byP[r.p].s+=r.ms;byP[r.p].r+=r.gr;byP[r.p].c+=r.mc});
+    const plArr=Object.values(byP).map(r=>({...r,roas:r.s>0?r.r/r.s:0,profit:r.r-r.s})).sort((a,b)=>b.roas-a.roas);
+    const bestRoas=plArr.length>0?plArr[0].roas:0;
+    // Dynamic thresholds based on actual data
+    const goodPl=plArr.filter(r=>r.roas>=bestRoas*0.8&&r.s>1);
+    const testPl=plArr.filter(r=>r.roas>=bestRoas*0.5&&r.roas<bestRoas*0.8&&r.s>1);
+    const badPl=plArr.filter(r=>r.roas<bestRoas*0.5||r.s<=1);
+
+    // Hourly analysis
     const hAgg={};
-    hourlyData.forEach(r=>{
-      if(!filterCampsGen.includes(r.c))return;
-      if(!hAgg[r.h])hAgg[r.h]={h:r.h,s:0,r:0};
-      hAgg[r.h].s+=r.s;hAgg[r.h].r+=r.r;
-    });
-    const hArr=Object.values(hAgg).map(r=>({...r,p:r.r-r.s,roas:r.s>0?r.r/r.s:0})).sort((a,b)=>b.p-a.p);
-    const bestHours=hArr.filter(r=>r.p>0).map(r=>String(r.h).padStart(2,'0')+':00');
-    const worstHours=hArr.filter(r=>r.p<0).sort((a,b)=>a.p-b.p).map(r=>String(r.h).padStart(2,'0')+':00');
-    const allCampNums=rawData.map(r=>parseInt(r.c.replace('Campanha ',''))).filter(n=>!isNaN(n));
-    const nextNum=Math.max(...allCampNums)+1;
-    if(!st.genName)st.genName='Campanha '+nextNum;
-    if(!st.genBudget)st.genBudget='10';
+    hourlyData.forEach(r=>{if(!cGen.includes(r.c))return;if(!hAgg[r.h])hAgg[r.h]={h:r.h,s:0,r:0,n:0};hAgg[r.h].s+=r.s;hAgg[r.h].r+=r.r;hAgg[r.h].n++});
+    const hArr=Object.values(hAgg).map(r=>({...r,p:r.r-r.s,roas:r.s>0?r.r/r.s:0})).sort((a,b)=>b.roas-a.roas);
+    const bestH=hArr.filter(r=>r.p>0||r.roas>=0.5);
+    const worstH=hArr.filter(r=>r.p<0&&r.roas<0.3);
+    const midH=hArr.filter(r=>r.p<=0&&r.roas>=0.3&&r.roas<0.5);
+
+    // Total metrics
+    const totS=plArr.reduce((a,r)=>a+r.s,0);
+    const totR=plArr.reduce((a,r)=>a+r.r,0);
+    const totC=plArr.reduce((a,r)=>a+r.c,0);
+    const nDays=[...new Set(rawData.filter(r=>cGen.includes(r.c)).map(r=>r.d))].length||1;
+    const dailySpend=totS/nDays;
+
+    if(!st.genName)st.genName='nova_campanha';
+    if(!st.genBudget)st.genBudget=String(Math.round(dailySpend));
     if(!st.genObjt)st.genObjt='OUTCOME_TRAFFIC';
 
     html+=`<div class="card" style="border-top:3px solid var(--green)">
-      <h3 style="margin-bottom:4px">🚀 Gerador de Configuração de Campanha</h3>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Monta o setup otimizado baseado nos seus dados de ROI. Copie e aplique no Gerenciador de Anúncios do Meta.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <h3 style="margin-bottom:4px">🚀 Gerador de Nova Campanha</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Setup otimizado baseado nos dados reais de ROI. Configure e copie pra aplicar no Gerenciador de Anúncios do Meta.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
         <div><label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">Nome da Campanha</label>
           <input type="text" value="${st.genName||''}" onchange="st.genName=this.value;render()" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box"></div>
-        <div><label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">Orçamento Diário (USD)</label>
-          <input type="number" value="${st.genBudget||'10'}" onchange="st.genBudget=this.value;render()" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box" min="1" step="1"></div>
-      </div>
-      <div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">Objetivo</label>
-        <select onchange="st.genObjt=this.value;render()" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px">
-          <option value="OUTCOME_TRAFFIC" ${st.genObjt==='OUTCOME_TRAFFIC'?'selected':''}>Tráfego</option>
-          <option value="OUTCOME_ENGAGEMENT" ${st.genObjt==='OUTCOME_ENGAGEMENT'?'selected':''}>Engajamento</option>
-          <option value="OUTCOME_LEADS" ${st.genObjt==='OUTCOME_LEADS'?'selected':''}>Leads</option>
-        </select>
+        <div><label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">Orçamento Diário (R$)</label>
+          <input type="number" value="${st.genBudget||'50'}" onchange="st.genBudget=this.value;render()" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box" min="1" step="1"></div>
+        <div><label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">Objetivo</label>
+          <select onchange="st.genObjt=this.value;render()" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px">
+            <option value="OUTCOME_TRAFFIC" ${st.genObjt==='OUTCOME_TRAFFIC'?'selected':''}>Tráfego</option>
+            <option value="OUTCOME_ENGAGEMENT" ${st.genObjt==='OUTCOME_ENGAGEMENT'?'selected':''}>Engajamento</option>
+            <option value="OUTCOME_LEADS" ${st.genObjt==='OUTCOME_LEADS'?'selected':''}>Leads</option>
+          </select></div>
       </div>
     </div>`;
 
-    html+=`<div class="card"><h3>📍 Placements Recomendados</h3><p style="font-size:11px;color:var(--muted);margin-bottom:12px">Baseado no ROAS das campanhas ativas</p>`;
-    if(goodPl.length>0){html+=`<div style="margin-bottom:12px"><span style="font-size:12px;font-weight:700;color:var(--green)">✅ USAR (ROAS ≥ 1.0x)</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${goodPl.map(p=>`<span style="background:#d4edda;color:#155724;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600">${p.p} <span style="opacity:.7">${p.roas.toFixed(2)}x</span></span>`).join('')}</div></div>`}
-    if(testPl.length>0){html+=`<div style="margin-bottom:12px"><span style="font-size:12px;font-weight:700;color:#f39c12">⚠️ TESTAR (ROAS 0.85-1.0x)</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${testPl.map(p=>`<span style="background:#fff3cd;color:#856404;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600">${p.p} <span style="opacity:.7">${p.roas.toFixed(2)}x</span></span>`).join('')}</div></div>`}
-    if(badPl.length>0){html+=`<div style="margin-bottom:12px"><span style="font-size:12px;font-weight:700;color:var(--red)">❌ EVITAR</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${badPl.map(p=>`<span style="background:#f8d7da;color:#721c24;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600">${p.p} <span style="opacity:.7">${p.roas.toFixed(2)}x</span></span>`).join('')}</div></div>`}
+    // PLACEMENTS
+    html+=`<div class="card"><h3>📍 Placements Recomendados</h3>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Ranking baseado no ROAS real. Melhor ROAS atual: ${bestRoas.toFixed(2)}x</p>`;
+    if(goodPl.length>0){html+=`<div style="margin-bottom:12px"><span style="font-size:12px;font-weight:700;color:var(--green)">✅ USAR (top performers)</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${goodPl.map(p=>`<span style="background:#d4edda;color:#155724;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600">${p.p} <span style="opacity:.7">${p.roas.toFixed(2)}x</span> <span style="opacity:.5">RPU ${fmt(p.c>0?p.r/p.c:0)}</span></span>`).join('')}</div></div>`}
+    if(testPl.length>0){html+=`<div style="margin-bottom:12px"><span style="font-size:12px;font-weight:700;color:#f39c12">⚠️ TESTAR com budget limitado</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${testPl.map(p=>`<span style="background:#fff3cd;color:#856404;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600">${p.p} <span style="opacity:.7">${p.roas.toFixed(2)}x</span></span>`).join('')}</div></div>`}
+    if(badPl.length>0){html+=`<div style="margin-bottom:12px"><span style="font-size:12px;font-weight:700;color:var(--red)">❌ NÃO USAR</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${badPl.map(p=>`<span style="background:#f8d7da;color:#721c24;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600">${p.p} <span style="opacity:.7">${p.roas.toFixed(2)}x</span></span>`).join('')}</div></div>`}
     html+=`</div>`;
 
-    html+=`<div class="card"><h3>⏰ Horários Recomendados</h3><p style="font-size:11px;color:var(--muted);margin-bottom:12px">Baseado no lucro por hora</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><span style="font-size:12px;font-weight:700;color:var(--green)">✅ Melhores horas</span><div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${bestHours.slice(0,10).map(h=>`<span style="background:#d4edda;color:#155724;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:700;font-family:monospace">${h}</span>`).join('')}</div></div>
-        <div><span style="font-size:12px;font-weight:700;color:var(--red)">❌ Evitar</span><div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${worstHours.slice(0,10).map(h=>`<span style="background:#f8d7da;color:#721c24;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:700;font-family:monospace">${h}</span>`).join('')}</div></div>
-      </div></div>`;
+    // DAYPARTING SCHEDULE
+    html+=`<div class="card"><h3>⏰ Schedule de Horários (Dayparting)</h3>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Configure no Meta Ads em "Programação de anúncios". Horas em verde = ligar, vermelho = desligar.</p>
+      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-bottom:8px">`;
+    for(let i=0;i<24;i++){
+      const hr=hAgg[i]||{s:0,r:0};
+      const roas=hr.s>0?hr.r/hr.s:0;
+      const profit=hr.r-hr.s;
+      const color=profit>0?'#27ae60':roas>=0.5?'#f39c12':roas>=0.3?'#e67e22':'#e74c3c';
+      const label=profit>0?'ON':roas>=0.5?'ON':'OFF';
+      html+=`<div style="text-align:center;padding:6px 2px;border-radius:4px;background:${color};color:#fff;font-size:10px;font-weight:700;cursor:default" title="${String(i).padStart(2,'0')}h: ROAS ${roas.toFixed(2)}x | Lucro R$${profit.toFixed(2)}"><div>${String(i).padStart(2,'0')}</div><div style="font-size:8px">${label}</div></div>`;
+    }
+    html+=`</div>
+      <div style="display:flex;gap:16px;font-size:11px;color:var(--muted);margin-top:8px">
+        <span>🟢 Ligar: ${bestH.map(r=>String(r.h).padStart(2,'0')+'h').join(', ')}</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">
+        <span>🔴 Desligar: ${worstH.map(r=>String(r.h).padStart(2,'0')+'h').join(', ')}</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">
+        <span>🟡 Monitorar: ${midH.map(r=>String(r.h).padStart(2,'0')+'h').join(', ')}</span>
+      </div>
+    </div>`;
 
-    const avgRoasGen=plGen.filter(r=>r.spend>1).reduce((a,r)=>a+r.roas,0)/(plGen.filter(r=>r.spend>1).length||1);
-    const goodRoas=goodPl.length>0?goodPl.reduce((a,r)=>a+r.roas*r.spend,0)/goodPl.reduce((a,r)=>a+r.spend,0):avgRoasGen;
-    const budget=parseFloat(st.genBudget)||10;
-    const projRev=budget*goodRoas;const projProfit=projRev-budget;
+    // PROJECTION with optimizations
+    const budget=parseFloat(st.genBudget)||50;
+    const curRoas=totS>0?totR/totS:0;
 
-    html+=`<div class="card" style="border-top:3px solid ${projProfit>=0?'var(--green)':'var(--red)'}">
+    // Optimized ROAS: only good hours + good placements
+    const goodHoursS=bestH.reduce((a,r)=>a+r.s,0);
+    const goodHoursR=bestH.reduce((a,r)=>a+r.r,0);
+    const optHourRoas=goodHoursS>0?goodHoursR/goodHoursS:curRoas;
+    const bestPlRoas=goodPl.length>0?goodPl.reduce((a,r)=>a+r.r,0)/goodPl.reduce((a,r)=>a+r.s,0):curRoas;
+    const optRoas=Math.min(optHourRoas*bestPlRoas/curRoas, bestPlRoas*1.2);
+
+    const projCurrent=budget*curRoas;
+    const projOpt=budget*optRoas;
+
+    html+=`<div class="card" style="border-top:3px solid #6c5ce7">
       <h3>💰 Projeção de ROI</h3>
-      <div class="kpis">
-        <div class="kpi"><div class="kpi-label">Orçamento/dia</div><div class="kpi-value">$${budget.toFixed(2)}</div></div>
-        <div class="kpi"><div class="kpi-label">ROAS estimado</div><div class="kpi-value" style="color:var(--green)">${goodRoas.toFixed(2)}x</div></div>
-        <div class="kpi"><div class="kpi-label">Receita/dia</div><div class="kpi-value" style="color:var(--green)">${fmt(projRev)}</div></div>
-        <div class="kpi"><div class="kpi-label">Lucro/dia</div><div class="kpi-value" style="color:${projProfit>=0?'var(--green)':'var(--red)'}">$${projProfit.toFixed(2)}</div></div>
-        <div class="kpi"><div class="kpi-label">Lucro/mês</div><div class="kpi-value" style="color:${projProfit>=0?'var(--green)':'var(--red)'}">$${(projProfit*30).toFixed(2)}</div></div>
-      </div></div>`;
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Comparação: sem otimização vs com dayparting + placement otimizado</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="background:var(--bg);padding:14px;border-radius:10px;border-top:3px solid var(--red)">
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--red)">❌ Sem Otimização (atual)</div>
+          <div class="kpis" style="grid-template-columns:1fr 1fr">
+            <div class="kpi"><div class="kpi-label">ROAS</div><div class="kpi-value">${curRoas.toFixed(2)}x</div></div>
+            <div class="kpi"><div class="kpi-label">Receita/dia</div><div class="kpi-value">${fmt(projCurrent)}</div></div>
+            <div class="kpi"><div class="kpi-label">Lucro/dia</div><div class="kpi-value" style="color:var(--red)">${fmt(projCurrent-budget)}</div></div>
+            <div class="kpi"><div class="kpi-label">Lucro/mês</div><div class="kpi-value" style="color:var(--red)">${fmt((projCurrent-budget)*30)}</div></div>
+          </div>
+        </div>
+        <div style="background:var(--bg);padding:14px;border-radius:10px;border-top:3px solid var(--green)">
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--green)">✅ Com Otimização</div>
+          <div class="kpis" style="grid-template-columns:1fr 1fr">
+            <div class="kpi"><div class="kpi-label">ROAS est.</div><div class="kpi-value" style="color:var(--green)">${optRoas.toFixed(2)}x</div></div>
+            <div class="kpi"><div class="kpi-label">Receita/dia</div><div class="kpi-value" style="color:var(--green)">${fmt(projOpt)}</div></div>
+            <div class="kpi"><div class="kpi-label">Lucro/dia</div><div class="kpi-value" style="color:${projOpt-budget>=0?'var(--green)':'var(--red)'}">${fmt(projOpt-budget)}</div></div>
+            <div class="kpi"><div class="kpi-label">Lucro/mês</div><div class="kpi-value" style="color:${projOpt-budget>=0?'var(--green)':'var(--red)'}">${fmt((projOpt-budget)*30)}</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)">
+        Diferença: <b style="color:var(--green)">+R$${((projOpt-projCurrent)*30).toFixed(2)}/mês</b> com otimização
+      </div>
+    </div>`;
 
-    const cfgTxt=`📋 CONFIG — ${st.genName||'Nova Campanha'}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📌 Objetivo: ${st.genObjt==='OUTCOME_TRAFFIC'?'Tráfego':st.genObjt==='OUTCOME_ENGAGEMENT'?'Engajamento':'Leads'}\n💵 Orçamento diário: $${budget.toFixed(2)}\n\n✅ PLACEMENTS RECOMENDADOS:\n${goodPl.map(p=>'  • '+p.p+' (ROAS '+p.roas.toFixed(2)+'x)').join('\n')}\n\n⚠️ TESTAR:\n${testPl.length>0?testPl.map(p=>'  • '+p.p+' (ROAS '+p.roas.toFixed(2)+'x)').join('\n'):'  Nenhum'}\n\n❌ NÃO USAR:\n${badPl.map(p=>'  • '+p.p).join('\n')}\n\n⏰ MELHORES: ${bestHours.slice(0,8).join(', ')}\n⏰ EVITAR: ${worstHours.slice(0,5).join(', ')}\n\n💰 ROAS: ${goodRoas.toFixed(2)}x | Lucro/dia: $${projProfit.toFixed(2)} | Lucro/mês: $${(projProfit*30).toFixed(2)}`;
+    // COPYABLE CONFIG
+    const onHours=hArr.filter(r=>r.p>0||r.roas>=0.5).map(r=>String(r.h).padStart(2,'0')+'h').sort().join(', ');
+    const offHours=hArr.filter(r=>r.p<0&&r.roas<0.3).map(r=>String(r.h).padStart(2,'0')+'h').sort().join(', ');
+    const monHours=hArr.filter(r=>r.p<=0&&r.roas>=0.3&&r.roas<0.5).map(r=>String(r.h).padStart(2,'0')+'h').sort().join(', ');
 
-    html+=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">📋 Copiar Configuração</h3>
+    const cfgTxt=`🚀 CONFIG — ${st.genName||'Nova Campanha'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 Objetivo: ${st.genObjt==='OUTCOME_TRAFFIC'?'Tráfego':st.genObjt==='OUTCOME_ENGAGEMENT'?'Engajamento':'Leads'}
+💵 Orçamento diário: R$${budget.toFixed(2)}
+
+📍 PLACEMENTS:
+  ✅ Usar: ${goodPl.map(p=>p.p+' ('+p.roas.toFixed(2)+'x)').join(', ')||'Nenhum com ROAS alto'}
+  ⚠️ Testar: ${testPl.map(p=>p.p+' ('+p.roas.toFixed(2)+'x)').join(', ')||'Nenhum'}
+  ❌ Não usar: ${badPl.map(p=>p.p).join(', ')||'Nenhum'}
+
+⏰ DAYPARTING (Schedule):
+  🟢 LIGAR: ${onHours||'Nenhum'}
+  🔴 DESLIGAR: ${offHours||'Nenhum'}
+  🟡 MONITORAR: ${monHours||'Nenhum'}
+
+💰 PROJEÇÃO:
+  Atual: ROAS ${curRoas.toFixed(2)}x | Lucro/dia R$${(projCurrent-budget).toFixed(2)}
+  Otimizado: ROAS ${optRoas.toFixed(2)}x | Lucro/dia R$${(projOpt-budget).toFixed(2)}
+  Ganho estimado: +R$${((projOpt-projCurrent)*30).toFixed(2)}/mês
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+    html+=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">📋 Configuração Completa</h3>
       <button onclick="navigator.clipboard.writeText(\`${cfgTxt.replace(/`/g,'\\`')}\`).then(()=>{this.textContent='✅ Copiado!';setTimeout(()=>{this.textContent='📋 Copiar'},2000)})" class="btn btn-green" style="font-size:12px;padding:6px 14px">📋 Copiar</button></div>
       <pre style="background:var(--bg);padding:14px;border-radius:8px;font-size:11px;white-space:pre-wrap;line-height:1.6;max-height:400px;overflow-y:auto">${cfgTxt}</pre></div>`;
   }
